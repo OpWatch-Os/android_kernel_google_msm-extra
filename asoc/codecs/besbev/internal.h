@@ -57,6 +57,9 @@ struct swr_port {
 struct besbev_priv {
 	struct device *dev;
 
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	int micbias_en[BESBEV_MAX_MICBIAS];
+#endif
 	int variant;
 	int pa_mute;
 	int curr_temp;

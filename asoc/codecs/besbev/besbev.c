@@ -628,6 +628,9 @@ int besbev_micbias_control(struct snd_soc_component *component,
 			snd_soc_component_update_bits(component,
 					micb_reg, enable_mask, enable_mask);
 		}
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+		besbev->micbias_en[micb_index] =  true;
+#endif
 		break;
 	case MICB_DISABLE:
 		if (besbev->micb_ref[micb_index] > 0)
@@ -651,6 +654,9 @@ int besbev_micbias_control(struct snd_soc_component *component,
 						enable_mask, 0x00);
 			besbev_global_mbias_disable(component);
 		}
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+		besbev->micbias_en[micb_index] =  false;
+#endif
 		break;
 	};
 
@@ -820,6 +826,59 @@ static int besbev_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 {
 	return __besbev_codec_enable_micbias(w, event);
 }
+
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+static int besbev_codec_micbias_get(struct snd_kcontrol *kcontrol,
+			   struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
+	int micb_num, micb_index;
+
+	if (strnstr(kcontrol->id.name, "MIC BIAS1", sizeof("MIC BIAS1")))
+		micb_num = MIC_BIAS_1;
+	else if (strnstr(kcontrol->id.name, "MIC BIAS2", sizeof("MIC BIAS2")))
+		micb_num = MIC_BIAS_2;
+	else
+		return -EINVAL;
+
+	micb_index = micb_num - 1;
+	ucontrol->value.integer.value[0] = besbev->micbias_en[micb_index];
+
+	dev_dbg(component->dev, "%s: micbias_en[%d] = 0x%x\n", __func__,
+		micb_index, besbev->micbias_en[micb_index]);
+
+	return 0;
+}
+
+static int besbev_codec_micbias_put(struct snd_kcontrol *kcontrol,
+			   struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component =
+			snd_soc_kcontrol_component(kcontrol);
+	int micb_num;
+
+	dev_dbg(component->dev, "%s: ucontrol->value.integer.value[0]  = %ld\n",
+		__func__, ucontrol->value.integer.value[0]);
+
+	if (strnstr(kcontrol->id.name, "MIC BIAS1", sizeof("MIC BIAS1")))
+		micb_num = MIC_BIAS_1;
+	else if (strnstr(kcontrol->id.name, "MIC BIAS2", sizeof("MIC BIAS2")))
+		micb_num = MIC_BIAS_2;
+	else
+		return -EINVAL;
+
+	if (ucontrol->value.integer.value[0])
+		besbev_micbias_control(component, micb_num,
+			MICB_ENABLE, true);
+	else
+		besbev_micbias_control(component, micb_num,
+			MICB_DISABLE, true);
+
+	return 0;
+}
+#endif
 
 static int __besbev_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
 						 int event)
@@ -1106,6 +1165,15 @@ static const struct snd_kcontrol_new besbev_snd_controls_rx[] = {
 
 	SOC_SINGLE_EXT("External VDD_SPK", SND_SOC_NOPM, 0, 1, 0,
 		besbev_get_ext_vdd_spk, besbev_put_ext_vdd_spk),
+
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	SOC_SINGLE_EXT("MIC BIAS1", SND_SOC_NOPM, 0, 1, 0,
+		besbev_codec_micbias_get,
+		besbev_codec_micbias_put),
+	SOC_SINGLE_EXT("MIC BIAS2", SND_SOC_NOPM, 0, 1, 0,
+		besbev_codec_micbias_get,
+		besbev_codec_micbias_put),
+#endif
 };
 
 static const struct snd_kcontrol_new adc1_switch[] = {
