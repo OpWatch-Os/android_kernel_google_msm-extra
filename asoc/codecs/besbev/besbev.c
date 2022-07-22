@@ -2070,6 +2070,10 @@ static int besbev_soc_codec_probe(struct snd_soc_component *component)
 
 	besbev->low_soc = false;
 	besbev->dev_up = true;
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	if (besbev->mic_bias1_always_on)
+		besbev_micbias_control(component, MIC_BIAS_1, MICB_ENABLE, true);
+#endif
 	/* Register notifier to change gain based on state of charge */
 	INIT_WORK(&besbev->soc_eval_work, besbev_evaluate_soc);
 	besbev->psy_nb.notifier_call = besbev_battery_supply_cb;
@@ -2307,6 +2311,14 @@ struct besbev_pdata *besbev_populate_dt_data(struct device *dev)
 
 	besbev_dt_parse_micbias_info(dev, &pdata->micbias);
 
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	/*
+	 * On some HW revisions we want to always enable MIC BIAS1.
+	 */
+	pdata->mic_bias1_always_on = of_property_read_bool(dev->of_node,
+					"google,mic-bias1-always-on");
+#endif
+
 	return pdata;
 }
 
@@ -2390,6 +2402,9 @@ static int besbev_bind(struct device *dev)
 	besbev->reset_reg = pdata->reset_reg;
 	besbev->foundry_id_reg = pdata->foundry_id_reg;
 	besbev->speaker_present = pdata->speaker_present;
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	besbev->mic_bias1_always_on = pdata->mic_bias1_always_on;
+#endif
 	ret = msm_cdc_init_supplies(dev, &besbev->supplies,
 				    pdata->regulator, pdata->num_supplies);
 	if (!besbev->supplies) {

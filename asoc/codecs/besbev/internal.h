@@ -59,6 +59,7 @@ struct besbev_priv {
 
 #ifdef CONFIG_GOOGLE_EOS_AUDIO
 	int micbias_en[BESBEV_MAX_MICBIAS];
+	bool mic_bias1_always_on;
 #endif
 	int variant;
 	int pa_mute;
@@ -162,6 +163,10 @@ struct besbev_pdata {
 	int reset_reg;
 	int foundry_id_reg;
 	bool speaker_present;
+
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	bool mic_bias1_always_on;
+#endif
 };
 
 struct wcd_ctrl_platform_data {
