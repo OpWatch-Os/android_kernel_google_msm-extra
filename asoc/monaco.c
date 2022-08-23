@@ -52,6 +52,13 @@
 #define WCN_CDC_SLIM_RX_CH_MAX 2
 #define WCN_CDC_SLIM_TX_CH_MAX 3
 
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef LPASS_BE_QUAT_TDM_TX_0
+#undef LPASS_BE_QUAT_TDM_TX_0
+#define LPASS_BE_QUAT_TDM_TX_0 "TDM-LPAIF_RXTX-TX-PRIMARY"
+#endif
+#endif
+
 #ifdef LPASS_BE_PRI_MI2S_TX
 #undef LPASS_BE_PRI_MI2S_TX
 #define LPASS_BE_PRI_MI2S_TX "MI2S-LPAIF_VA-TX-PRIMARY"
@@ -1032,9 +1039,39 @@ static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
 		.ops = &msm_common_be_ops,
 		SND_SOC_DAILINK_REG(pri_tdm_rx),
 	},
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	{
+		.name = LPASS_BE_QUAT_TDM_TX_0,
+		.stream_name = LPASS_BE_QUAT_TDM_TX_0,
+		.capture_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &msm_common_be_ops,
+		SND_SOC_DAILINK_REG(quat_tdm_tx_0),
+	},
+#endif
 };
 
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+static struct snd_soc_dai_link google_mcu_mic_dai_links[] = {
+	{
+		.name = "MCU-MIC",
+		.stream_name = "MCU-MIC",
+		.capture_only = 1,
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &msm_common_be_ops,
+		SND_SOC_DAILINK_REG(mcu_mic),
+	},
+};
+#endif
+
 static struct snd_soc_dai_link msm_monaco_dai_links[
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	ARRAY_SIZE(google_mcu_mic_dai_links) +
+#endif
 	ARRAY_SIZE(msm_common_dai_links) +
 	ARRAY_SIZE(msm_va_dai_links) +
 	ARRAY_SIZE(msm_mi2s_be_dai_links) +
@@ -1142,6 +1179,15 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					sizeof(msm_pri_tdm_be_dai_links));
 				total_links += ARRAY_SIZE(msm_pri_tdm_be_dai_links);
 			}
+
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+			dev_dbg(dev, "%s(): MCU Mic support present\n",
+				__func__);
+			memcpy(msm_monaco_dai_links + total_links,
+				google_mcu_mic_dai_links,
+				sizeof(google_mcu_mic_dai_links));
+			total_links += ARRAY_SIZE(google_mcu_mic_dai_links);
+#endif
 		}
 
 		// WCN BT is common for both ATH & ATH+SL variants

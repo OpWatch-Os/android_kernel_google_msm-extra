@@ -17,8 +17,8 @@ endif
 
 ifeq ($(KERNEL_BUILD), 0)
 	ifeq ($(CONFIG_ARCH_MONACO), y)
-		include $(AUDIO_ROOT)/config/monacoauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/monacoautoconf.h
+		include $(AUDIO_ROOT)/config/eosauto.conf
+		INCS    +=  -include $(AUDIO_ROOT)/config/eosautoconf.h
 	endif
 endif
 
@@ -69,8 +69,6 @@ INCS +=		$(COMMON_INC) \
 		$(UAPI_INC)
 
 EXTRA_CFLAGS += $(INCS)
-
-EXTRA_CFLAGS += -DCONFIG_GOOGLE_EOS_AUDIO
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
