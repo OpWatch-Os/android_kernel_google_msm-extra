@@ -1138,6 +1138,15 @@ static const struct snd_kcontrol_new besbev_snd_controls_tx[] = {
 			analog_gain),
 	SOC_SINGLE_TLV("ADC2 Volume", BESBEV_ANA_TX_AMIC2, 0, 8, 0,
 			analog_gain),
+
+#ifdef CONFIG_GOOGLE_EOS_AUDIO
+	SOC_SINGLE_EXT("MIC BIAS1", SND_SOC_NOPM, 0, 1, 0,
+		besbev_codec_micbias_get,
+		besbev_codec_micbias_put),
+	SOC_SINGLE_EXT("MIC BIAS2", SND_SOC_NOPM, 0, 1, 0,
+		besbev_codec_micbias_get,
+		besbev_codec_micbias_put),
+#endif
 };
 
 static const struct snd_kcontrol_new besbev_snd_controls_rx[] = {

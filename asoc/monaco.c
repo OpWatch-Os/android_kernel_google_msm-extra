@@ -971,24 +971,7 @@ static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
 #endif
 };
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-static struct snd_soc_dai_link google_mcu_mic_dai_links[] = {
-	{
-		.name = "MCU-MIC",
-		.stream_name = "MCU-MIC",
-		.capture_only = 1,
-		.ignore_pmdown_time = 1,
-		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
-		SND_SOC_DAILINK_REG(mcu_mic),
-	},
-};
-#endif
-
 static struct snd_soc_dai_link msm_monaco_dai_links[
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-	ARRAY_SIZE(google_mcu_mic_dai_links) +
-#endif
 	ARRAY_SIZE(msm_common_dai_links) +
 	ARRAY_SIZE(msm_va_dai_links) +
 	ARRAY_SIZE(msm_mi2s_be_dai_links) +
@@ -1097,15 +1080,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					sizeof(msm_pri_tdm_be_dai_links));
 				total_links += ARRAY_SIZE(msm_pri_tdm_be_dai_links);
 			}
-
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-			dev_dbg(dev, "%s(): MCU Mic support present\n",
-				__func__);
-			memcpy(msm_monaco_dai_links + total_links,
-				google_mcu_mic_dai_links,
-				sizeof(google_mcu_mic_dai_links));
-			total_links += ARRAY_SIZE(google_mcu_mic_dai_links);
-#endif
 		}
 
 		// WCN BT is common for both ATH & ATH+SL variants
