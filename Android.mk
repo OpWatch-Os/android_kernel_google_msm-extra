@@ -22,6 +22,9 @@ ifeq ($(ENABLE_AUDIO_LEGACY_TECHPACK),true)
 include $(call all-subdir-makefiles)
 endif
 
+BOARD_OPENSOURCE_DIR ?= vendor/qcom/opensource
+BOARD_COMMON_DIR ?= device/qcom/common
+
 # Build/Package only in case of supported target
 ifeq ($(call is-board-platform-in-list,taro kalama bengal monaco), true)
 
