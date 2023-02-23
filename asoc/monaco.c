@@ -57,11 +57,6 @@
 #undef LPASS_BE_QUAT_TDM_TX_0
 #define LPASS_BE_QUAT_TDM_TX_0 "TDM-LPAIF_RXTX-TX-PRIMARY"
 #endif
-
-#ifdef LPASS_BE_SEC_MI2S_RX
-#undef LPASS_BE_SEC_MI2S_RX
-#define LPASS_BE_SEC_MI2S_RX "MI2S-LPAIF_AUD-RX-PRIMARY"
-#endif
 #endif
 
 #ifdef LPASS_BE_PRI_MI2S_TX
@@ -151,10 +146,6 @@ static int get_intf_index(const char *stream_name)
 		return PRI_MI2S_TDM_AUXPCM;
 	else if (strnstr(stream_name, "LPAIF_RXTX", strlen(stream_name)))
 		return QUAT_MI2S_TDM_AUXPCM;
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name)))
-		return SEC_MI2S_TDM_AUXPCM;
-#endif
 	else {
 		pr_debug("%s: stream name %s does not match\n", __func__, stream_name);
 		return -EINVAL;
@@ -942,22 +933,6 @@ static struct snd_soc_dai_link msm_pri_mi2s_be_dai_links[] = {
 	},
 };
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-static struct snd_soc_dai_link msm_haptics_be_dai_links[] = {
-	{
-		.name = LPASS_BE_SEC_MI2S_RX,
-		.stream_name = LPASS_BE_SEC_MI2S_RX,
-		.playback_only = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-				SND_SOC_DPCM_TRIGGER_POST},
-		.ignore_pmdown_time = 1,
-		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
-		SND_SOC_DAILINK_REG(sec_mi2s_rx),
-	},
-};
-#endif
-
 static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
 	{
 		.name = LPASS_BE_PRI_TDM_TX_0,
@@ -1002,9 +977,6 @@ static struct snd_soc_dai_link msm_monaco_dai_links[
 	ARRAY_SIZE(msm_mi2s_be_dai_links) +
 	ARRAY_SIZE(msm_wcn_be_dai_links) +
 	ARRAY_SIZE(msm_pri_mi2s_be_dai_links) +
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-	ARRAY_SIZE(msm_haptics_be_dai_links) +
-#endif
 	ARRAY_SIZE(msm_pri_tdm_be_dai_links)
 ];
 
@@ -1097,19 +1069,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					sizeof(msm_pri_mi2s_be_dai_links));
 				total_links += ARRAY_SIZE(msm_pri_mi2s_be_dai_links);
 			}
-
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
-			rc = of_property_read_u32(dev->of_node,
-				"qcom,cs40l26-codec", &val);
-			if (!rc && val) {
-				dev_dbg(dev, "%s(): CS40L26 codec support present\n",
-					__func__);
-				memcpy(msm_monaco_dai_links + total_links,
-					msm_haptics_be_dai_links,
-					sizeof(msm_haptics_be_dai_links));
-				total_links += ARRAY_SIZE(msm_haptics_be_dai_links);
-			}
-#endif
 
 			rc = of_property_read_u32(dev->of_node,
 				"qcom,tdm-audio-intf", &val);

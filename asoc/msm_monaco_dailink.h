@@ -145,9 +145,4 @@ SND_SOC_DAILINK_DEFS(quat_tdm_tx_0,
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx"),
 			   COMP_CODEC("mcu_mic_codec", "mcu_mic_codec_dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
-
-SND_SOC_DAILINK_DEFS(sec_mi2s_rx,
-	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("cs40l26-codec.2.auto", "cs40l26-pcm")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 #endif
