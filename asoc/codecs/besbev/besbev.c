@@ -435,7 +435,7 @@ int besbev_global_mbias_enable(struct snd_soc_component *component)
 				BESBEV_ANA_MBIAS_TSADC_EN, 0x20, 0x20);
 		snd_soc_component_update_bits(component,
 				BESBEV_ANA_MBIAS_TSADC_EN, 0x10, 0x10);
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 		snd_soc_component_update_bits(component,
 				BESBEV_DIG_SWR_CDC_RST, 0x1, 0x1);
 		usleep_range(1000,2000);
@@ -635,7 +635,7 @@ int besbev_micbias_control(struct snd_soc_component *component,
 			snd_soc_component_update_bits(component,
 					micb_reg, enable_mask, enable_mask);
 		}
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 		besbev->micbias_en[micb_index] =  true;
 #endif
 		break;
@@ -661,7 +661,7 @@ int besbev_micbias_control(struct snd_soc_component *component,
 						enable_mask, 0x00);
 			besbev_global_mbias_disable(component);
 		}
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 		besbev->micbias_en[micb_index] =  false;
 #endif
 		break;
@@ -834,7 +834,7 @@ static int besbev_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 	return __besbev_codec_enable_micbias(w, event);
 }
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 static int besbev_codec_micbias_get(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
@@ -1146,7 +1146,7 @@ static const struct snd_kcontrol_new besbev_snd_controls_tx[] = {
 	SOC_SINGLE_TLV("ADC2 Volume", BESBEV_ANA_TX_AMIC2, 0, 8, 0,
 			analog_gain),
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	SOC_SINGLE_EXT("MIC BIAS1", SND_SOC_NOPM, 0, 1, 0,
 		besbev_codec_micbias_get,
 		besbev_codec_micbias_put),
@@ -1182,7 +1182,7 @@ static const struct snd_kcontrol_new besbev_snd_controls_rx[] = {
 	SOC_SINGLE_EXT("External VDD_SPK", SND_SOC_NOPM, 0, 1, 0,
 		besbev_get_ext_vdd_spk, besbev_put_ext_vdd_spk),
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	SOC_SINGLE_EXT("MIC BIAS1", SND_SOC_NOPM, 0, 1, 0,
 		besbev_codec_micbias_get,
 		besbev_codec_micbias_put),
@@ -2082,7 +2082,7 @@ static int besbev_soc_codec_probe(struct snd_soc_component *component)
 
 	besbev->low_soc = false;
 	besbev->dev_up = true;
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	if (besbev->mic_bias1_always_on)
 		besbev_micbias_control(component, MIC_BIAS_1, MICB_ENABLE, true);
 #endif
@@ -2323,7 +2323,7 @@ struct besbev_pdata *besbev_populate_dt_data(struct device *dev)
 
 	besbev_dt_parse_micbias_info(dev, &pdata->micbias);
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	/*
 	 * On some HW revisions we want to always enable MIC BIAS1.
 	 */
@@ -2414,7 +2414,7 @@ static int besbev_bind(struct device *dev)
 	besbev->reset_reg = pdata->reset_reg;
 	besbev->foundry_id_reg = pdata->foundry_id_reg;
 	besbev->speaker_present = pdata->speaker_present;
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	besbev->mic_bias1_always_on = pdata->mic_bias1_always_on;
 #endif
 	ret = msm_cdc_init_supplies(dev, &besbev->supplies,

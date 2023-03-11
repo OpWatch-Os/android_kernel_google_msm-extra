@@ -52,7 +52,7 @@
 #define WCN_CDC_SLIM_RX_CH_MAX 2
 #define WCN_CDC_SLIM_TX_CH_MAX 3
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 #ifdef LPASS_BE_QUAT_TDM_TX_0
 #undef LPASS_BE_QUAT_TDM_TX_0
 #define LPASS_BE_QUAT_TDM_TX_0 "TDM-LPAIF_RXTX-TX-PRIMARY"
@@ -151,7 +151,7 @@ static int get_intf_index(const char *stream_name)
 		return PRI_MI2S_TDM_AUXPCM;
 	else if (strnstr(stream_name, "LPAIF_RXTX", strlen(stream_name)))
 		return QUAT_MI2S_TDM_AUXPCM;
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name)))
 		return SEC_MI2S_TDM_AUXPCM;
 #endif
@@ -942,7 +942,7 @@ static struct snd_soc_dai_link msm_pri_mi2s_be_dai_links[] = {
 	},
 };
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 static struct snd_soc_dai_link msm_haptics_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SEC_MI2S_RX,
@@ -981,7 +981,7 @@ static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
 		.ops = &msm_common_be_ops,
 		SND_SOC_DAILINK_REG(pri_tdm_rx),
 	},
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	{
 		.name = LPASS_BE_QUAT_TDM_TX_0,
 		.stream_name = LPASS_BE_QUAT_TDM_TX_0,
@@ -1002,7 +1002,7 @@ static struct snd_soc_dai_link msm_monaco_dai_links[
 	ARRAY_SIZE(msm_mi2s_be_dai_links) +
 	ARRAY_SIZE(msm_wcn_be_dai_links) +
 	ARRAY_SIZE(msm_pri_mi2s_be_dai_links) +
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	ARRAY_SIZE(msm_haptics_be_dai_links) +
 #endif
 	ARRAY_SIZE(msm_pri_tdm_be_dai_links)
@@ -1098,7 +1098,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				total_links += ARRAY_SIZE(msm_pri_mi2s_be_dai_links);
 			}
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 			rc = of_property_read_u32(dev->of_node,
 				"qcom,cs40l26-codec", &val);
 			if (!rc && val) {

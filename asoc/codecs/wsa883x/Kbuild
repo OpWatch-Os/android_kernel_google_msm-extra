@@ -31,8 +31,8 @@ ifeq ($(KERNEL_BUILD), 0)
 		INCS    +=  -include $(AUDIO_ROOT)/config/litoautoconf.h
 	endif
 	ifeq ($(CONFIG_ARCH_MONACO), y)
-		include $(AUDIO_ROOT)/config/eosauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/eosautoconf.h
+		include $(AUDIO_ROOT)/config/sw5100auto.conf
+		INCS    +=  -include $(AUDIO_ROOT)/config/sw5100autoconf.h
 	endif
 endif
 

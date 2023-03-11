@@ -57,7 +57,7 @@ struct swr_port {
 struct besbev_priv {
 	struct device *dev;
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	int micbias_en[BESBEV_MAX_MICBIAS];
 	bool mic_bias1_always_on;
 #endif
@@ -163,7 +163,7 @@ struct besbev_pdata {
 	int foundry_id_reg;
 	bool speaker_present;
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	bool mic_bias1_always_on;
 #endif
 };
