@@ -139,7 +139,7 @@ SND_SOC_DAILINK_DEFS(pri_tdm_rx,
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-rx")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
-#ifdef CONFIG_GOOGLE_EOS_AUDIO
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
 SND_SOC_DAILINK_DEFS(quat_tdm_tx_0,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx"),
