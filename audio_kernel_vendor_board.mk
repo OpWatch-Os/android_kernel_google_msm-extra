@@ -4,15 +4,13 @@ ifeq ($(TARGET_KERNEL_DLKM_DISABLE), true)
     AUDIO_DLKM_ENABLE := true
   endif
 else
-  ifeq ($(TARGET_KERNEL_DLKM_AUDIO_OVERRIDE),true)
-    AUDIO_DLKM_ENABLE := true
-  endif
+  AUDIO_DLKM_ENABLE := true
 endif
 
 BOARD_OPENSOURCE_DIR ?= vendor/qcom/opensource
 
 ifeq ($(AUDIO_DLKM_ENABLE), true)
-  ifeq ($(call is-board-platform-in-list,taro kalama bengal monaco), true)
+  ifeq ($(call is-board-platform-in-list,taro kalama bengal monaco msmnile), true)
     include vendor/qcom/opensource/audio-kernel/audio_kernel_modules.mk
   endif
   ifeq ($(ENABLE_AUDIO_LEGACY_TECHPACK),true)
