@@ -198,7 +198,7 @@ static int besbev_init_reg(struct snd_soc_component *component,
 		snd_soc_component_update_bits(component, BESBEV_TAGC_CTL,
 						0x0E, 0x0A);
 		snd_soc_component_update_bits(component, BESBEV_TAGC_TIME,
-						0x30, 0x30);
+						0x30, 0x10);
 		snd_soc_component_update_bits(component, BESBEV_TAGC_E2E_GAIN,
 						0x1F, 0x04);
 		snd_soc_component_update_bits(component, BESBEV_TAGC_CTL,
@@ -435,13 +435,6 @@ int besbev_global_mbias_enable(struct snd_soc_component *component)
 				BESBEV_ANA_MBIAS_TSADC_EN, 0x20, 0x20);
 		snd_soc_component_update_bits(component,
 				BESBEV_ANA_MBIAS_TSADC_EN, 0x10, 0x10);
-#ifdef CONFIG_GOOGLE_SW5100_AUDIO
-		snd_soc_component_update_bits(component,
-				BESBEV_DIG_SWR_CDC_RST, 0x1, 0x1);
-		usleep_range(1000,2000);
-		snd_soc_component_update_bits(component,
-				BESBEV_DIG_SWR_CDC_RST, 0x1, 0x0);
-#endif
 	}
 	besbev->mbias_cnt++;
 	mutex_unlock(&besbev->main_bias_lock);
