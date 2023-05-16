@@ -109,6 +109,9 @@ struct msm_asoc_mach_data {
 	struct msm_common_pdata *common_pdata;
 	struct device_node *dmic01_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic23_gpio_p; /* used by pinctrl API */
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	struct device_node *dmic45_gpio_p; /* used by pinctrl API */
+#endif
 	struct device_node *us_euro_gpio_p; /* used by pinctrl API */
 	struct pinctrl *usbc_en2_gpio_p; /* used by pinctrl API */
 	struct device_node *hph_en1_gpio_p; /* used by pinctrl API */
@@ -130,6 +133,9 @@ static bool codec_reg_done;
 static struct snd_soc_card snd_soc_card_monaco_msm;
 static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+static int dmic_4_5_gpio_cnt;
+#endif
 static atomic_t bt_slim_clk_src_value = ATOMIC_INIT(SLIMBUS_CLOCK_SRC_XO);
 
 static const char *get_domain_str(int domain)
@@ -399,7 +405,11 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 	struct device_node *dmic_gpio;
 	char  *wname;
 
+#ifndef CONFIG_GOOGLE_SW5100_AUDIO
 	wname = strpbrk(w->name, "0123");
+#else
+	wname = strpbrk(w->name, "012345");
+#endif
 	if (!wname) {
 		dev_err(component->dev, "%s: widget not found\n", __func__);
 		return -EINVAL;
@@ -425,6 +435,13 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 		dmic_gpio_cnt = &dmic_2_3_gpio_cnt;
 		dmic_gpio = pdata->dmic23_gpio_p;
 		break;
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	case 4:
+	case 5:
+		dmic_gpio_cnt = &dmic_4_5_gpio_cnt;
+		dmic_gpio = pdata->dmic45_gpio_p;
+		break;
+#endif
 	default:
 		dev_err(component->dev, "%s: Invalid DMIC Selection\n",
 			__func__);
@@ -476,6 +493,12 @@ static const struct snd_soc_dapm_widget msm_int_dapm_widgets[] = {
 	SND_SOC_DAPM_MIC("Digital Mic1", msm_dmic_event),
 	SND_SOC_DAPM_MIC("Digital Mic2", msm_dmic_event),
 	SND_SOC_DAPM_MIC("Digital Mic3", msm_dmic_event),
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	SND_SOC_DAPM_MIC("Digital Mic4", msm_dmic_event),
+	SND_SOC_DAPM_MIC("Digital Mic5", msm_dmic_event),
+	SND_SOC_DAPM_MIC("Digital Mic6", NULL),
+	SND_SOC_DAPM_MIC("Digital Mic7", NULL),
+#endif
 };
 
 static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
@@ -510,6 +533,12 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic1");
 	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic2");
 	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic3");
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic4");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic5");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic6");
+	snd_soc_dapm_ignore_suspend(dapm, "Digital Mic7");
+#endif
 
 	snd_soc_dapm_ignore_suspend(dapm, "Analog Mic1");
 	snd_soc_dapm_ignore_suspend(dapm, "Analog Mic2");
@@ -1042,6 +1071,7 @@ static struct snd_soc_dai_link msm_haptics_be_dai_links[] = {
 #endif
 
 static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
+#ifndef CONFIG_GOOGLE_SW5100_AUDIO
 	{
 		.name = LPASS_BE_PRI_TDM_TX_0,
 		.stream_name = LPASS_BE_PRI_TDM_TX_0,
@@ -1064,7 +1094,7 @@ static struct snd_soc_dai_link msm_pri_tdm_be_dai_links[] = {
 		.ops = &msm_common_be_ops,
 		SND_SOC_DAILINK_REG(pri_tdm_rx),
 	},
-#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+#else
 	{
 		.name = LPASS_BE_QUAT_TDM_TX_0,
 		.stream_name = LPASS_BE_QUAT_TDM_TX_0,
@@ -1184,7 +1214,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			rc = of_property_read_u32(dev->of_node,
 				"qcom,cs40l26-codec", &val);
 			if (!rc && val) {
-				dev_dbg(dev, "%s(): CS40L26 codec support present\n",
+				dev_info(dev, "%s(): CS40L26 codec support present\n",
 					__func__);
 				memcpy(msm_monaco_dai_links + total_links,
 					msm_haptics_be_dai_links,
@@ -1584,6 +1614,12 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	pdata->dmic23_gpio_p = of_parse_phandle(pdev->dev.of_node,
 					      "qcom,cdc-dmic23-gpios",
 					       0);
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	pdata->dmic45_gpio_p = of_parse_phandle(pdev->dev.of_node,
+					      "qcom,cdc-dmic45-gpios",
+					       0);
+#endif
+
 	mutex_init(&pdata->cs.lock);
 	/**
 	 * By default state is OFFLINE, once ADSP is up post registration
