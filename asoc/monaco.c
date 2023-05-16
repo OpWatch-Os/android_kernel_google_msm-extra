@@ -1055,7 +1055,7 @@ static struct snd_soc_dai_link msm_pri_mi2s_be_dai_links[] = {
 };
 
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
-static struct snd_soc_dai_link msm_haptics_be_dai_links[] = {
+static struct snd_soc_dai_link msm_sec_haptics_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SEC_MI2S_RX,
 		.stream_name = LPASS_BE_SEC_MI2S_RX,
@@ -1065,7 +1065,21 @@ static struct snd_soc_dai_link msm_haptics_be_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
 		.ops = &msm_common_be_ops,
-		SND_SOC_DAILINK_REG(sec_mi2s_rx),
+		SND_SOC_DAILINK_REG(sec_mi2s_haptics_rx),
+	},
+};
+
+static struct snd_soc_dai_link msm_pri_haptics_be_dai_links[] = {
+	{
+		.name = LPASS_BE_PRI_MI2S_RX,
+		.stream_name = LPASS_BE_PRI_MI2S_RX,
+		.playback_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &msm_common_be_ops,
+		SND_SOC_DAILINK_REG(pri_mi2s_haptics_rx),
 	},
 };
 #endif
@@ -1116,7 +1130,8 @@ static struct snd_soc_dai_link msm_monaco_dai_links[
 	ARRAY_SIZE(msm_wcn_be_dai_links) +
 	ARRAY_SIZE(msm_pri_mi2s_be_dai_links) +
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
-	ARRAY_SIZE(msm_haptics_be_dai_links) +
+	ARRAY_SIZE(msm_sec_haptics_be_dai_links) +
+	ARRAY_SIZE(msm_pri_haptics_be_dai_links) +
 #endif
 	ARRAY_SIZE(msm_pri_tdm_be_dai_links)
 ];
@@ -1212,14 +1227,27 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 			rc = of_property_read_u32(dev->of_node,
-				"qcom,cs40l26-codec", &val);
+				"qcom,cs40l26-codec-sec-i2s", &val);
 			if (!rc && val) {
-				dev_info(dev, "%s(): CS40L26 codec support present\n",
+				dev_info(dev, "%s(): CS40L26 codec support present"
+					" - Using Secondary MI2S\n",
 					__func__);
 				memcpy(msm_monaco_dai_links + total_links,
-					msm_haptics_be_dai_links,
-					sizeof(msm_haptics_be_dai_links));
-				total_links += ARRAY_SIZE(msm_haptics_be_dai_links);
+					msm_sec_haptics_be_dai_links,
+					sizeof(msm_sec_haptics_be_dai_links));
+				total_links += ARRAY_SIZE(msm_sec_haptics_be_dai_links);
+			} else {
+				rc = of_property_read_u32(dev->of_node,
+					"qcom,cs40l26-codec-pri-mi2s", &val);
+				if (!rc && val) {
+					dev_info(dev, "%s(): CS40L26 codec support present"
+						" - Using Primary MI2S\n",
+						__func__);
+					memcpy(msm_monaco_dai_links + total_links,
+						msm_pri_haptics_be_dai_links,
+						sizeof(msm_pri_haptics_be_dai_links));
+					total_links += ARRAY_SIZE(msm_pri_haptics_be_dai_links);
+				}
 			}
 #endif
 
