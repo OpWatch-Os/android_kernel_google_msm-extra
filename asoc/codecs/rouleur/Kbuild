@@ -1,3 +1,8 @@
+# b/223899851: Don't try to build from an Android tree, even if we have
+# a pointer to one. Unlike QC, we don't bundle the kernel source and
+# build in the Android build.
+undefine ANDROID_BUILD_TOP
+
 # We can build either as part of a standalone Kernel build or as
 # an external module.  Determine which mechanism is being used
 ifeq ($(MODNAME),)
