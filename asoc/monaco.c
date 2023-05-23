@@ -62,6 +62,16 @@
 #undef LPASS_BE_SEC_MI2S_RX
 #define LPASS_BE_SEC_MI2S_RX "MI2S-LPAIF_AUD-RX-PRIMARY"
 #endif
+
+#ifdef LPASS_BE_TERT_MI2S_TX
+#undef LPASS_BE_TERT_MI2S_TX
+#define LPASS_BE_TERT_MI2S_TX "MI2S-LPAIF_AUD-TX-SECONDARY"
+#endif
+
+#ifdef LPASS_BE_TERT_MI2S_RX
+#undef LPASS_BE_TERT_MI2S_RX
+#define LPASS_BE_TERT_MI2S_RX "MI2S-LPAIF_AUD-RX-SECONDARY"
+#endif
 #endif
 
 #ifdef LPASS_BE_PRI_MI2S_TX
@@ -232,8 +242,12 @@ static int get_intf_index(const char *stream_name)
 	else if (strnstr(stream_name, "LPAIF_RXTX", strlen(stream_name)))
 		return QUAT_MI2S_TDM_AUXPCM;
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
-	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name)))
+	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name))
+		&& strnstr(stream_name, "PRIMARY", strlen(stream_name)))
 		return SEC_MI2S_TDM_AUXPCM;
+	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name))
+		&& strnstr(stream_name, "SECONDARY", strlen(stream_name)))
+		return TER_MI2S_TDM_AUXPCM;
 #endif
 	else {
 		pr_debug("%s: stream name %s does not match\n", __func__, stream_name);
@@ -1055,6 +1069,31 @@ static struct snd_soc_dai_link msm_pri_mi2s_be_dai_links[] = {
 };
 
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
+static struct snd_soc_dai_link msm_tert_mi2s_be_dai_links[] = {
+	{
+		.name = LPASS_BE_TERT_MI2S_TX,
+		.stream_name = LPASS_BE_TERT_MI2S_TX,
+		.capture_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &msm_common_be_ops,
+		SND_SOC_DAILINK_REG(tert_mi2s_tx),
+	},
+	{
+		.name = LPASS_BE_TERT_MI2S_RX,
+		.stream_name = LPASS_BE_TERT_MI2S_RX,
+		.playback_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &msm_common_be_ops,
+		SND_SOC_DAILINK_REG(tert_mi2s_rx),
+	},
+};
+
 static struct snd_soc_dai_link msm_sec_haptics_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SEC_MI2S_RX,
@@ -1130,6 +1169,7 @@ static struct snd_soc_dai_link msm_monaco_dai_links[
 	ARRAY_SIZE(msm_wcn_be_dai_links) +
 	ARRAY_SIZE(msm_pri_mi2s_be_dai_links) +
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
+	ARRAY_SIZE(msm_tert_mi2s_be_dai_links) +
 	ARRAY_SIZE(msm_sec_haptics_be_dai_links) +
 	ARRAY_SIZE(msm_pri_haptics_be_dai_links) +
 #endif
@@ -1226,6 +1266,17 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			}
 
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
+			rc = of_property_read_u32(dev->of_node,
+				"qcom,mi2s-tert-audio-intf", &val);
+			if (!rc && val) {
+				dev_info(dev, "%s(): MI2S Tertiary support present\n",
+					__func__);
+				memcpy(msm_monaco_dai_links + total_links,
+					msm_tert_mi2s_be_dai_links,
+					sizeof(msm_tert_mi2s_be_dai_links));
+				total_links += ARRAY_SIZE(msm_tert_mi2s_be_dai_links);
+			}
+
 			rc = of_property_read_u32(dev->of_node,
 				"qcom,cs40l26-codec-sec-i2s", &val);
 			if (!rc && val) {
