@@ -1270,7 +1270,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			}
 
 			rc = of_property_read_u32(dev->of_node,
-				"qcom,cs40l26-codec-sec-i2s", &val);
+				"qcom,cs40l26-codec-sec-mi2s", &val);
 			if (!rc && val) {
 				dev_info(dev, "%s(): CS40L26 codec support present"
 					" - Using Secondary MI2S\n",
