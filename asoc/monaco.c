@@ -1170,8 +1170,7 @@ static struct snd_soc_dai_link msm_monaco_dai_links[
 	ARRAY_SIZE(msm_pri_mi2s_be_dai_links) +
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	ARRAY_SIZE(msm_tert_mi2s_be_dai_links) +
-	ARRAY_SIZE(msm_sec_haptics_be_dai_links) +
-	ARRAY_SIZE(msm_pri_haptics_be_dai_links) +
+	ARRAY_SIZE(msm_sec_haptics_be_dai_links) + // ~ msm_pri_haptics_be_dai_links
 #endif
 	ARRAY_SIZE(msm_pri_tdm_be_dai_links)
 ];
@@ -1198,6 +1197,33 @@ static int msm_snd_card_monaco_late_probe(struct snd_soc_card *card)
 
 	return 0;
 }
+
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+static bool cs40l26_is_loaded(struct device *dev)
+{
+	struct of_phandle_args args;
+	const char *dai_name = NULL;
+	int rc, num_elems, i;
+
+	num_elems = of_count_phandle_with_args(dev->of_node,
+		"asoc-codec", NULL);
+
+	for (i = 0; i < num_elems; i++) {
+		rc = of_parse_phandle_with_fixed_args(dev->of_node,
+				"asoc-codec", 0, i, &args);
+		if (rc) {
+			dev_err(dev, "asoc-codec property parse error\n");
+		} else if (!snd_soc_get_dai_name(&args, &dai_name)) {
+			if (!strcmp(dai_name, "cs40l26-pcm")) {
+				dev_info(dev, "Found cs40l26-pcm\n");
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+#endif
 
 static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 {
@@ -1283,10 +1309,14 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				dev_info(dev, "%s(): CS40L26 codec support present"
 					" - Using Secondary MI2S\n",
 					__func__);
-				memcpy(msm_monaco_dai_links + total_links,
-					msm_sec_haptics_be_dai_links,
-					sizeof(msm_sec_haptics_be_dai_links));
-				total_links += ARRAY_SIZE(msm_sec_haptics_be_dai_links);
+				if (cs40l26_is_loaded(dev)) {
+					memcpy(msm_monaco_dai_links + total_links,
+						msm_sec_haptics_be_dai_links,
+						sizeof(msm_sec_haptics_be_dai_links));
+					total_links += ARRAY_SIZE(msm_sec_haptics_be_dai_links);
+				} else {
+					dev_err(dev, "%s(): CS40L26 is not loaded\n", __func__);
+				}
 			} else {
 				rc = of_property_read_u32(dev->of_node,
 					"qcom,cs40l26-codec-pri-mi2s", &val);
@@ -1294,10 +1324,14 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					dev_info(dev, "%s(): CS40L26 codec support present"
 						" - Using Primary MI2S\n",
 						__func__);
-					memcpy(msm_monaco_dai_links + total_links,
-						msm_pri_haptics_be_dai_links,
-						sizeof(msm_pri_haptics_be_dai_links));
-					total_links += ARRAY_SIZE(msm_pri_haptics_be_dai_links);
+					if (cs40l26_is_loaded(dev)) {
+						memcpy(msm_monaco_dai_links + total_links,
+							msm_pri_haptics_be_dai_links,
+							sizeof(msm_pri_haptics_be_dai_links));
+						total_links += ARRAY_SIZE(msm_pri_haptics_be_dai_links);
+					} else {
+						dev_err(dev, "%s(): CS40L26 is not loaded\n", __func__);
+					}
 				}
 			}
 #endif
