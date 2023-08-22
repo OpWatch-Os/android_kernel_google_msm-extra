@@ -3764,6 +3764,8 @@ static int rx_swrm_clock(void *handle, bool enable)
 	struct rx_macro_priv *rx_priv = (struct rx_macro_priv *) handle;
 	struct regmap *regmap = dev_get_regmap(rx_priv->dev->parent, NULL);
 	int ret = 0;
+	int pm_suspend_ret;
+	int usage_count;
 
 	if (regmap == NULL) {
 		dev_err(rx_priv->dev, "%s: regmap is NULL\n", __func__);
@@ -3837,6 +3839,20 @@ static int rx_swrm_clock(void *handle, bool enable)
 					"%s: rx swr pinctrl disable failed\n",
 					__func__);
 				goto exit;
+			}
+
+			// By adding a synchronous call to pm_runtime_suspend() here,
+			// swr_mstr_interrupt() now explicitly turns off the clock rather
+			// than relying on autosuspend.
+			pm_suspend_ret = pm_runtime_suspend(rx_priv->dev);
+			if (pm_suspend_ret < 0) {
+				usage_count = atomic_read(&rx_priv->dev->power.usage_count);
+				trace_printk(
+					"%s: pm_runtime_suspend returned %d, usage_count %d\n",
+					__func__, pm_suspend_ret, usage_count);
+				dev_err(rx_priv->dev,
+					"%s: pm_runtime_suspend returned %d, usage_count %d\n",
+					__func__, pm_suspend_ret, usage_count);
 			}
 		}
 	}
