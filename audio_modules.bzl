@@ -67,18 +67,19 @@ audio_modules.register(
     config_option = "CONFIG_AUDIO_PKT",
     srcs = ["audio-pkt.c"],
 )
-audio_modules.register(
-    name = "audio_cc_ipc_dlkm",
-    path = IPC_PATH,
-    config_option = "CONFIG_AUDIO_CC_IPC",
-    conditional_srcs = {
-        "TARGET_SUPPORTS_WEAR_AON": {
-            True: [
-                "audio-cc-ipc.c",
-            ],
-        },
-    },
-)
+#Temp compilation fix :Disabling audio_cc registartion for MLP
+#audio_modules.register(
+#    name = "audio_cc_ipc_dlkm",
+#    path = IPC_PATH,
+#    config_option = "CONFIG_AUDIO_CC_IPC",
+#    conditional_srcs = {
+#        "TARGET_SUPPORTS_WEAR_AON": {
+#            True: [
+#                "audio-cc-ipc.c",
+#            ],
+#        },
+#    },
+#)
 # >>>> SOC MODULES <<<<
 audio_modules.register(
     name = "pinctrl_lpi_dlkm",
@@ -254,16 +255,17 @@ audio_modules.register(
     srcs = ["besbev-slave.c"],
 )
 # >>>> CC MODULE <<<<
-audio_modules.register(
-    name = "cc_dlkm",
-    path = ASOC_CODECS_PATH + "/cc",
-    config_option = "CONFIG_SND_SOC_CC",
-    conditional_srcs = {
-        "TARGET_SUPPORTS_WEAR_AON": {
-            True: [
-                "cc_codec.c",
-                "cc_pktzr.c",
-            ],
-        },
-    },
-)
+#Temp compilation fix : Disabling cc_codec registartion for MLP
+#audio_modules.register(
+#    name = "cc_dlkm",
+#    path = ASOC_CODECS_PATH + "/cc",
+#    config_option = "CONFIG_SND_SOC_CC",
+#    conditional_srcs = {
+#        "TARGET_SUPPORTS_WEAR_AON": {
+#            True: [
+#                "cc_codec.c",
+#                "cc_pktzr.c",
+#            ],
+#        },
+#    },
+#)
