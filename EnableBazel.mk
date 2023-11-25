@@ -27,9 +27,8 @@ LOCAL_MODULE_KO_DIRS += asoc/codecs/besbev/pmw5100-spmi_dlkm.ko
 LOCAL_MODULE_KO_DIRS += asoc/codecs/besbev/besbev_dlkm.ko
 LOCAL_MODULE_KO_DIRS += asoc/codecs/besbev/besbev-slave_dlkm.ko
 
-# Temp fix to Stub cc_codec compilation for LW.3.0
-#ifeq ($(TARGET_SUPPORTS_WEAR_AON), true)
-#LOCAL_MODULE_KO_DIRS += asoc/codecs/cc/cc_dlkm.ko
-#LOCAL_MODULE_KO_DIRS += ipc/audio_cc_ipc_dlkm.ko
-#endif   #wear_aon
+ifeq ($(TARGET_SUPPORTS_WEAR_AON), true)
+LOCAL_MODULE_KO_DIRS += asoc/codecs/cc/cc_dlkm.ko
+LOCAL_MODULE_KO_DIRS += ipc/audio_cc_ipc_dlkm.ko
+endif   #wear_aon
 endif   #monaco
