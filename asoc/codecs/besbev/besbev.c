@@ -29,6 +29,10 @@
 #include <bindings/audio-codec-port-types.h>
 #include <asoc/msm-cdc-supply.h>
 #include <linux/power_supply.h>
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+#include <linux/iio/consumer.h>
+#include <linux/iio/types.h>
+#endif
 #include "asoc/bolero-slave-internal.h"
 
 #define NUM_SWRS_DT_PARAMS 5
@@ -88,6 +92,10 @@ static int besbev_handle_post_irq(void *data);
 static int besbev_reset(struct device *dev, int val);
 static int besbev_get_temperature(struct snd_soc_component *component,
 				   int *temp);
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+static int besbev_get_temperature_cam_therm(struct snd_soc_component *component,
+				   int *temp);
+#endif
 enum {
 	SPKR_STATUS = 0,
 	SPKR_ADIE_LB,
@@ -1088,11 +1096,18 @@ static int besbev_get_temp(struct snd_kcontrol *kcontrol,
 	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
 	int temp = 0;
 
-	if (test_bit(SPKR_STATUS, &besbev->status_mask))
+	if (test_bit(SPKR_STATUS, &besbev->status_mask)) {
 		temp = besbev->curr_temp;
-	else
+	} else {
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+		if (besbev->cam_therm_en)
+			besbev_get_temperature_cam_therm(component, &temp);
+		else
+			besbev_get_temperature(component, &temp);
+#else
 		besbev_get_temperature(component, &temp);
-
+#endif
+	}
 	dev_dbg(component->dev, "%s: temp = 0x%x\n", __func__, temp);
 	ucontrol->value.integer.value[0] = temp;
 
@@ -1983,6 +1998,56 @@ static int besbev_get_temperature(struct snd_soc_component *component,
 	return ret;
 }
 
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+static int besbev_get_temperature_cam_therm(struct snd_soc_component *component,
+				   int *temp)
+{
+	int ret = 0;
+	int temp_val = 0;
+	u8 retry = BESBEV_TEMP_RETRY;
+	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
+	struct iio_channel *ch_cam_therm;
+
+	if (!besbev)
+		return -EINVAL;
+
+	ch_cam_therm = iio_channel_get(besbev->dev, "cam_therm");
+	if (ch_cam_therm == NULL) {
+		pr_err("could not get iio channel name\n");
+		ret = -EINVAL;
+		goto clean_ch_name;
+	}
+	do {
+		pr_debug("read temperature from camera thermistor\n");
+		ret = iio_read_channel_processed(ch_cam_therm, &temp_val);
+
+		pr_debug("cam thermistor temp value is %d\n", temp_val);
+		/* temperature value is in mv, divide by 1000 to get in degrees */
+		temp_val = temp_val/1000;
+
+		if (temp_val <= LOW_TEMP_THRESHOLD ||
+			temp_val >= HIGH_TEMP_THRESHOLD) {
+			pr_debug("%s: T0: %d is out of range[%d, %d]\n", __func__,
+				 temp_val, LOW_TEMP_THRESHOLD, HIGH_TEMP_THRESHOLD);
+			if (retry--)
+				msleep(10);
+		} else {
+			break;
+		}
+	} while (retry);
+
+clean_ch_name:
+	iio_channel_release(ch_cam_therm);
+	besbev->curr_temp = temp_val;
+	if (temp)
+		*temp = temp_val;
+
+	pr_debug("%s: t0 measured: %d\n", __func__, temp_val);
+
+	return ret;
+}
+#endif
+
 static int besbev_soc_codec_probe(struct snd_soc_component *component)
 {
 	char w_name[MAX_NAME_LEN];
@@ -2327,6 +2392,8 @@ struct besbev_pdata *besbev_populate_dt_data(struct device *dev)
 	 */
 	pdata->mic_bias1_always_on = of_property_read_bool(dev->of_node,
 					"google,mic-bias1-always-on");
+        pdata->cam_therm_en = of_property_read_bool(dev->of_node,
+					"qcom,cam-therm-enabled");
 #endif
 
 	return pdata;
@@ -2414,6 +2481,7 @@ static int besbev_bind(struct device *dev)
 	besbev->speaker_present = pdata->speaker_present;
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	besbev->mic_bias1_always_on = pdata->mic_bias1_always_on;
+	besbev->cam_therm_en = pdata->cam_therm_en;
 #endif
 	ret = msm_cdc_init_supplies(dev, &besbev->supplies,
 				    pdata->regulator, pdata->num_supplies);
