@@ -60,6 +60,12 @@ struct besbev_priv {
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	int micbias_en[BESBEV_MAX_MICBIAS];
 	bool mic_bias1_always_on;
+	/* The patch that brought in "cam_therm" nomenclature was originated
+	 * by QCOM.  The nomenclature is relative to QCOM's reference
+	 * design.  Google connects "audio_therm" thermistor where QCOM
+	 * connects "cam_therm."  So when this code is run on Google's
+	 * hardware, we're reading "audio_therm" thermistor value. */
+	bool cam_therm_en;
 #endif
 	int variant;
 	int pa_mute;
@@ -166,6 +172,7 @@ struct besbev_pdata {
 
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 	bool mic_bias1_always_on;
+	bool cam_therm_en;
 #endif
 };
 
