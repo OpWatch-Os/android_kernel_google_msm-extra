@@ -45,5 +45,6 @@ def define_monaco():
             "CONFIG_SND_SOC_CC",
             "CONFIG_AUDIO_CC_IPC",
             "CONFIG_DIGITAL_CDC_RSC_MGR",
+            "CONFIG_GOOGLE_SW5100_AUDIO",
         ],
     )
