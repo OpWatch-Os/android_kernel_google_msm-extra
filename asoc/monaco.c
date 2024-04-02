@@ -41,6 +41,9 @@
 #include "msm_common.h"
 #include "msm_monaco_dailink.h"
 #include "dsp/audio_prm.h"
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+#include "asoc/monaco-google.h"
+#endif
 
 #define DRV_NAME "monaco-asoc-snd"
 #define __CHIPSET__ "MONACO "
@@ -145,6 +148,9 @@ static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
 #ifdef CONFIG_GOOGLE_SW5100_AUDIO
 static int dmic_4_5_gpio_cnt;
+static bool card_defer_probe;
+int snd_cs40l26_loaded;
+EXPORT_SYMBOL(snd_cs40l26_loaded);
 #endif
 static atomic_t bt_slim_clk_src_value = ATOMIC_INIT(SLIMBUS_CLOCK_SRC_XO);
 
@@ -1198,33 +1204,6 @@ static int msm_snd_card_monaco_late_probe(struct snd_soc_card *card)
 	return 0;
 }
 
-#ifdef CONFIG_GOOGLE_SW5100_AUDIO
-static bool cs40l26_is_loaded(struct device *dev)
-{
-	struct of_phandle_args args;
-	const char *dai_name = NULL;
-	int rc, num_elems, i;
-
-	num_elems = of_count_phandle_with_args(dev->of_node,
-		"asoc-codec", NULL);
-
-	for (i = 0; i < num_elems; i++) {
-		rc = of_parse_phandle_with_fixed_args(dev->of_node,
-				"asoc-codec", 0, i, &args);
-		if (rc) {
-			dev_err(dev, "asoc-codec property parse error\n");
-		} else if (!snd_soc_get_dai_name(&args, &dai_name)) {
-			if (!strcmp(dai_name, "cs40l26-pcm")) {
-				dev_info(dev, "Found cs40l26-pcm\n");
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-#endif
-
 static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 {
 	struct snd_soc_card *card = NULL;
@@ -1307,14 +1286,18 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				"qcom,cs40l26-codec-sec-mi2s", &val);
 			if (!rc && val) {
 				dev_info(dev, "%s(): CS40L26 codec support present"
-					" - Using Secondary MI2S\n",
-					__func__);
-				if (cs40l26_is_loaded(dev)) {
+					" - Using Secondary MI2S | snd_cs40l26_loaded: %d\n",
+					__func__, snd_cs40l26_loaded);
+				if (snd_cs40l26_loaded == 1) {
 					memcpy(msm_monaco_dai_links + total_links,
 						msm_sec_haptics_be_dai_links,
 						sizeof(msm_sec_haptics_be_dai_links));
 					total_links += ARRAY_SIZE(msm_sec_haptics_be_dai_links);
+				} else if (snd_cs40l26_loaded == 0) {
+					card_defer_probe = true;
+					return NULL;
 				} else {
+					// If snd_cs40l26 probe failed do not add haptics DAI.
 					dev_err(dev, "%s(): CS40L26 is not loaded\n", __func__);
 				}
 			} else {
@@ -1322,14 +1305,18 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					"qcom,cs40l26-codec-pri-mi2s", &val);
 				if (!rc && val) {
 					dev_info(dev, "%s(): CS40L26 codec support present"
-						" - Using Primary MI2S\n",
-						__func__);
-					if (cs40l26_is_loaded(dev)) {
+						" - Using Primary MI2S | snd_cs40l26_loaded: %d\n",
+						__func__, snd_cs40l26_loaded);
+					if (snd_cs40l26_loaded == 1) {
 						memcpy(msm_monaco_dai_links + total_links,
 							msm_pri_haptics_be_dai_links,
 							sizeof(msm_pri_haptics_be_dai_links));
 						total_links += ARRAY_SIZE(msm_pri_haptics_be_dai_links);
+					} else if (snd_cs40l26_loaded == 0) {
+						card_defer_probe = true;
+						return NULL;
 					} else {
+						// If snd_cs40l26 probe failed do not add haptics DAI.
 						dev_err(dev, "%s(): CS40L26 is not loaded\n", __func__);
 					}
 				}
@@ -1609,6 +1596,14 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	card = populate_snd_card_dailinks(&pdev->dev);
 	if (!card) {
 		dev_err(&pdev->dev, "%s: Card uninitialized\n", __func__);
+#ifdef CONFIG_GOOGLE_SW5100_AUDIO
+		if (card_defer_probe) {
+			dev_info(&pdev->dev, "%s: Defer probe for card retry\n", __func__);
+			card_defer_probe = false; // Reset
+			ret = -EPROBE_DEFER;
+			goto err;
+		}
+#endif
 		ret = -EINVAL;
 		goto err;
 	}
