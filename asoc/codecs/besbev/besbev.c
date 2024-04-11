@@ -2022,8 +2022,11 @@ static int besbev_get_temperature_cam_therm(struct snd_soc_component *component,
 		ret = iio_read_channel_processed(ch_cam_therm, &temp_val);
 
 		pr_debug("cam thermistor temp value is %d\n", temp_val);
-		/* temperature value is in mv, divide by 1000 to get in degrees */
-		temp_val = temp_val/1000;
+		/*
+		 * temp_val is in millidegrees C; add 500 and then divide by 1000
+		 * to get the result to properly rounded degrees C.
+		 */
+		temp_val = (temp_val + 500) / 1000;
 
 		if (temp_val <= LOW_TEMP_THRESHOLD ||
 			temp_val >= HIGH_TEMP_THRESHOLD) {
