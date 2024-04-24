@@ -508,9 +508,12 @@ static int swrm_core_vote_request(struct swr_mstr_ctrl *swrm, bool enable)
 	}
 	if (swrm->core_vote) {
 		ret = swrm->core_vote(swrm->handle, enable);
-		if (ret)
+		if (ret) {
 			dev_err_ratelimited(swrm->dev,
-				"%s: core vote request failed\n", __func__);
+				"%s: core vote request failed, ret=%d\n",
+				__func__, ret);
+			trace_printk("%s: core vote request failed, ret=%d\n", __func__, ret);
+		}
 	}
 exit:
 	mutex_unlock(&swrm->clklock);
@@ -536,8 +539,9 @@ static int swrm_clk_request(struct swr_mstr_ctrl *swrm, bool enable)
 				ret = swrm->core_vote(swrm->handle, true);
 				if (ret) {
 					dev_err_ratelimited(swrm->dev,
-						"%s: core vote request failed\n",
-						__func__);
+						"%s: core vote request failed, ret=%d\n",
+						__func__, ret);
+					trace_printk("%s: core vote request failed, ret=%d\n", __func__, ret);
 					swrm->core_vote(swrm->handle, false);
 					goto exit;
 				}
@@ -2089,6 +2093,10 @@ static irqreturn_t swr_mstr_interrupt(int irq, void *dev)
 	}
 	mutex_unlock(&swrm->reslock);
 
+	// swr_master_read (really swrm_ahb_read) is the function that has errors
+	// and leaves the PM counter nonzero if it races with the suspend
+	// procedure. This is what we're protecting by calling synchronize_irq in
+	// swrm_runtime_suspend below.
 	intr_sts = swr_master_read(swrm, SWRM_INTERRUPT_STATUS(swrm->ee_val));
 	intr_sts_masked = intr_sts & swrm->intr_mask;
 
@@ -3486,6 +3494,14 @@ exit:
 	dev_dbg(dev, "%s: pm_runtime: suspend done state: %d\n",
 		__func__, swrm->state);
 	pm_runtime_set_autosuspend_delay(dev, auto_suspend_timer);
+
+	// Wait for swr_mstr_interrupt to complete if it is currently running.
+	// bolero_runtime_suspend is the next function to run, and it can cause a
+	// race condition with the interrupt's swrm_ahb_read, above. Call
+	// synchronize_irq here, where we know the value of swrm->irq.
+	if (swrm->irq) {
+		synchronize_irq(swrm->irq);
+	}
 	return ret;
 }
 #endif /* CONFIG_PM */
