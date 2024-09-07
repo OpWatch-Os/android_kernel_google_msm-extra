@@ -59,6 +59,7 @@ ddk_uapi_headers(
     ],
     visibility = [
         "//private/devices/google:__subpackages__",
+        "//private/google-modules/soc/msm:__pkg__",
     ],
 )
 
